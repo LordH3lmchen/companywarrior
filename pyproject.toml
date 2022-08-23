@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "companywarrior"
+version = "0.1.0"
+description = ""
+authors = ["Florian Trabauer <florian@trabauer.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.3"
+rich = "^12.5.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^22.6.0"
+ipython = "^8.4.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+roadwarrior = "companywarrior.cli:roadwarrior"
+officewarrior = "companywarrior.cli.officewarrior"
+companywarrior = "companywarrior.cli:companywarrior"

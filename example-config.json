@@ -1,0 +1,15 @@
+{
+	"roadwarrior": {
+		"nmcli_connection_name" : "lordHelmchen",
+		"printer" : [ "default_printer", "drv:///hp/hpcups.drv/hp-officejet_250_mobile_series.ppd", "iso_a4_210x297mm", "hp:/net/OfficeJet_250_Mobile_Series?ip=xxx.xxx.xxx.xxx" ],
+		"printer_ip_last_octet_android_hotspot" : 93,
+		"wireguard_config" : "wg0",
+		"launch" : [ "https://www.mminvoice.at/" ]
+	},
+	"officewarrior": {
+		"nmcli_connection_name" : "trabauer50",
+		"printer" : [ "default_printer", "drv:///hp/hpcups.drv/hp-officejet_250_mobile_series.ppd", "iso_a4_210x297mm", "hp:/net/OfficeJet_250_Mobile_Series?ip=xxx.xxx.xxx.xxx" ],
+		"launch" : [ "https://www.mminvoice.at/", "https://docs.google.com/spreadsheets/d/1pzG7KXYuCD3erY6tWFBBpozeCGijT-bm5cR9CKxVPo4/edit#gid=650031084" ]
+	}
+}
+
