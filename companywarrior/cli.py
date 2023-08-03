@@ -4,10 +4,12 @@ import subprocess
 import socket
 import logging
 import json
+import re
 from rich import print
 from rich.logging import RichHandler
 from rich.console import Console
 import os
+import datetime
 
 # # The issue with android
 # https://forum.xda-developers.com/t/how-do-i-assign-a-permanent-static-ip-address-to-hotspot-in-android-10.4037021/
@@ -63,23 +65,33 @@ def _wg_connect(cfg_name: str, state: str):
         logging.info(wg_up_result)
 
 
-def add_printer(printer, last_octet):
+def get_wifi_ip(nmcli_profile: str):
+    nmcli_proc_result = subprocess.run(
+        ["nmcli", "con", "show", nmcli_profile], capture_output=True
+    )
+    return re.search(
+        r"IP4.ADDRESS\[[0-9]+\]:\s+([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})",
+        str(nmcli_proc_result.stdout),
+    ).group(1)
+
+
+def add_printer(printer, last_octet, nmcli_connection_name: str):
     (
         printer_queue,
         printer_driver,
         printer_media,
         printer_connection_string,
     ) = printer
-    machine_ip_address_octets = socket.gethostbyname(
-        socket.gethostname()
-    ).split(
+    machine_ip_address_octets = socket.gethostbyname(socket.gethostname()).split(
         sep="."
     )  # Get the Wifi IP
+    machine_ip_address_octets = get_wifi_ip(nmcli_connection_name).split(sep=".")
     printer_ip = f"{machine_ip_address_octets[0]}.{machine_ip_address_octets[1]}.{machine_ip_address_octets[2]}.{last_octet}"
     logging.info(f"printer ip address = {printer_ip}")
-    printer_connection_string = printer_connection_string.replace(
-        "xxx.xxx.xxx.xxx", printer_ip
-    )  # f"hp:/net/OfficeJet_250_Mobile_Series?ip={printer_ip}"
+    if last_octet:
+        printer_connection_string = printer_connection_string.replace(
+            "xxx.xxx.xxx.xxx", printer_ip
+        )  # f"hp:/net/OfficeJet_250_Mobile_Series?ip={printer_ip}"
     printer_remove_result = subprocess.run(["lpadmin", "-x", printer_queue])
     if printer_remove_result.returncode != 0:
         logging.error(printer_remove_result)
@@ -111,7 +123,6 @@ def add_printer(printer, last_octet):
         logging.error(printer_options_result)
     else:
         logging.info(printer_options_result)
-
 
 
 def wg_connect(cfg_name: str):
@@ -149,7 +160,7 @@ def configure_roadwarrior(ctx, param, filename):
     "--nmcli-connection-name",
     metavar="<name>",
     show_default=True,
-    help="connection name, to list available connections use \"nmcli con show\"",
+    help='connection name, to list available connections use "nmcli con show"',
 )
 @click.option(
     "-p",
@@ -210,7 +221,9 @@ def roadwarrior(
 
     # 3. setup the printer
     if printer:
-        add_printer(printer, printer_ip_last_octet_android_hotspot)
+        add_printer(
+            printer, printer_ip_last_octet_android_hotspot, nmcli_connection_name
+        )
 
     # 5. establish wireguard connection
     for connection_interface in get_active_wg_interfaces():
@@ -240,13 +253,34 @@ def officewarrior():
     metavar="<config file path>",
     help="read default options from config.ini file",
 )
-#TODO implement these options
+# TODO implement these options
 # @click.option("--add-profile", is_flag=True)
 # @click.option("-r", "--remove-profile", "r_profile")
-def companywarrior(config, profile, add_profile):
+def companywarrior(config, profile):
     with open(config, "r") as cfg_file:
         cfg = json.load(cfg_file)
     logging.debug(cfg)
+    if "nmcli_connection_name" in cfg[profile].keys():
+        nmcli_connect(cfg[profile]["nmcli_connection_name"])
+    if "printer" in cfg[profile].keys():
+        if "printer_ip_last_octet_android_hotspot" in cfg[profile].keys():
+            printer_ip_last_octet_android_hotspot = cfg[profile][
+                "printer_ip_last_octet_android_hotspot"
+            ]
+        else:
+            printer_ip_last_octet_android_hotspot = None
+        add_printer(
+            cfg[profile]["printer"],
+            printer_ip_last_octet_android_hotspot,
+            cfg[profile]["nmcli_connection_name"],
+        )
+    for active_wg_conenction in get_active_wg_interfaces():
+        wg_disconnect(active_wg_conenction)
+    if "wireguard_config" in cfg[profile].keys():
+        wg_connect(cfg[profile]["wireguard_config"])
+    if "launch" in cfg[profile].keys():
+        for app in cfg[profile]["launch"]:
+            click.launch(app)
 
 
 if __name__ == "__main__":
