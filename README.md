@@ -1,6 +1,6 @@
 #  companywarrior
 
-is a script to setup a Linux based Laptop for remote work. It conects to the Wifi sets up the printer and establishes a vpn connection.
+is a script to setup a Linux based laptop for remote work. It conects to the wifi sets up the printer and establishes a vpn connection.
 
 Available shell commands/scripts are:
 
